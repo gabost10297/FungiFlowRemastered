@@ -1,0 +1,9 @@
+name: base
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - blast      # identify consensus sequences against UNITE
+  - kraken2    # classify every individual read against UNITE
+  - seqkit     # inspect and filter FASTA/FASTQ files
