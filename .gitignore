@@ -1,0 +1,13 @@
+# Private barcode data
+raw_data/*
+!raw_data/.gitkeep
+
+# UNITE: keep only the original .tgz
+database/unite/*.fasta
+database/unite/*_dev.fasta
+
+# Generated files
+results/*
+!results/.gitkeep
+logs/*
+!logs/.gitkeep
