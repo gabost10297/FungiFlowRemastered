@@ -11,3 +11,5 @@ results/*
 !results/.gitkeep
 logs/*
 !logs/.gitkeep
+database/blast/
+database/kraken2/
