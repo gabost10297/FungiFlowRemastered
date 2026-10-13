@@ -7,3 +7,5 @@ dependencies:
   - blast      # identify consensus sequences against UNITE
   - kraken2    # classify every individual read against UNITE
   - seqkit     # inspect and filter FASTA/FASTQ files
+  - chopper   # trim primers from FASTA/FASTQ files
+  - vsearch     # identify consensus sequences against UNITE
