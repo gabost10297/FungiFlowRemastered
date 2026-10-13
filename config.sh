@@ -11,3 +11,7 @@ KRAKEN_DB="database/kraken2"
 MIN_QUAL=10      # minimum average read quality
 MIN_LEN=400      # shortest read kept, roughly a complete ITS1-5.8S-ITS2
 MAX_LEN=1200     # longest read kept, removes artefacts
+
+# Kraken2 classification (script 05)
+KRAKEN_CONFIDENCE=0 # minimum confidence score for Kraken2 classification (0 = no extra filtering)
+KRAKEN_MIN_HITS=3 # # minimum number of separate k-mer hits needed to classify a read
