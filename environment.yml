@@ -9,3 +9,4 @@ dependencies:
   - seqkit     # inspect and filter FASTA/FASTQ files
   - chopper   # trim primers from FASTA/FASTQ files
   - vsearch     # identify consensus sequences against UNITE
+  - itsx       # trim consensuses to ITS1-5.8S-ITS2
