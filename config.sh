@@ -21,3 +21,6 @@ MEDAKA_MODEL="r1041_e82_400bps_hac_v5.2.0"   # must match the basecalling model
 MIN_CLUSTER_SIZE=20        # smallest cluster (in reads) that gets a consensus
 MAX_SEQS_CONSENSUS=300     # reads used per consensus; more adds time, not accuracy
 CLUSTER_READS=0            # reads per sample to cluster; 0 = all reads
+
+# ITSx (script 07)
+ITSX_EVALUE=1e-2   # default 1e-5 misses the short LSU stretch at the end of many consensuses
