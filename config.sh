@@ -15,3 +15,9 @@ MAX_LEN=1200     # longest read kept, removes artefacts
 # Kraken2 classification (script 05)
 KRAKEN_CONFIDENCE=0 # minimum confidence score for Kraken2 classification (0 = no extra filtering)
 KRAKEN_MIN_HITS=3 # # minimum number of separate k-mer hits needed to classify a read
+
+# Clustering and consensus (script 06)
+MEDAKA_MODEL="r1041_e82_400bps_hac_v5.2.0"   # must match the basecalling model
+MIN_CLUSTER_SIZE=20        # smallest cluster (in reads) that gets a consensus
+MAX_SEQS_CONSENSUS=300     # reads used per consensus; more adds time, not accuracy
+CLUSTER_READS=0            # reads per sample to cluster; 0 = all reads
