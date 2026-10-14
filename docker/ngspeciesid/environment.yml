@@ -1,0 +1,8 @@
+name: base
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - ngspeciesid   # cluster reads (isONclust) and build consensuses (spoa)
+  - medaka        # polish consensuses with Nanopore error model
+  - seqkit
