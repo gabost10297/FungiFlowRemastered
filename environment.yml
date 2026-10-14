@@ -10,3 +10,5 @@ dependencies:
   - chopper   # trim primers from FASTA/FASTQ files
   - vsearch     # identify consensus sequences against UNITE
   - itsx       # trim consensuses to ITS1-5.8S-ITS2
+  - mafft      # align sequences of the same organism, and the representatives
+  - iqtree     # build the phylogenetic tree from the aligned representatives
