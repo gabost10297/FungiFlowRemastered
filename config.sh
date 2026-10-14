@@ -38,3 +38,5 @@ BLAST_GENUS_QCOV=75       # ... and >= 75% query coverage
 BLAST_AMBIGUOUS_GAP=0.5   # next different species within 0.5% identity: not resolved
 BLAST_MIN_REF_COV=85      # flag hits covering < 85% of the reference (cut-short ITS)
 
+# Organisms (script 10)
+TOP_ORGANISMS=10
