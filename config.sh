@@ -40,3 +40,15 @@ BLAST_MIN_REF_COV=85      # flag hits covering < 85% of the reference (cut-short
 
 # Organisms (script 10)
 TOP_ORGANISMS=10
+
+# Alignments (script 11)
+SAME_ITS_IDENTITY=98.5   # percent; same as OTU_IDENTITY
+LENGTH_DIFF=20           # report sequences this many bp longer/shorter than the representative
+
+# Alignments (script 11)
+SAME_ITS_IDENTITY=98.5   # percent; same as OTU_IDENTITY
+LENGTH_DIFF=20           # report sequences this many bp longer/shorter than the representative
+
+# Tree (script 12)
+TREE_ORGANISMS=30   # most abundant organisms in the tree
+TREE_BOOTSTRAP=1000 # ultrafast bootstrap replicates
