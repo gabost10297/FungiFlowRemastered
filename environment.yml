@@ -7,8 +7,9 @@ dependencies:
   - blast      # identify consensus sequences against UNITE
   - kraken2    # classify every individual read against UNITE
   - seqkit     # inspect and filter FASTA/FASTQ files
-  - chopper   # trim primers from FASTA/FASTQ files
-  - vsearch     # identify consensus sequences against UNITE
+  - chopper    # filter reads by quality and length
+  - vsearch    # orient reads, remove chimeras, cluster OTUs
   - itsx       # trim consensuses to ITS1-5.8S-ITS2
   - mafft      # align sequences of the same organism, and the representatives
   - iqtree     # build the phylogenetic tree from the aligned representatives
+  
