@@ -61,7 +61,6 @@ count_reads() {
         echo "orienting..."
         # Compare each read with UNITE in both directions; reverse-complement
         # reads that match the opposite strand.
-        # --fastq_qmax 93: vsearch rejects quality values above 41 by default
         # (an old Illumina limit), but Nanopore reads can go higher.
         vsearch --orient "$filtered" \
                 --db "$UNITE_FASTA" \
