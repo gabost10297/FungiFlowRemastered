@@ -555,9 +555,23 @@ the same ITS sequence in different samples.
   - `tree.iqtree` — report: chosen model, likelihood, a text drawing of the tree
   - `tree.log` — full IQ-TREE log; `tree.mldist`, `tree.bionj`, `tree.splits.nex`,
     `tree.model.gz`, `tree.ckp.gz` — IQ-TREE intermediates
-- **Viewing:** upload `tree.treefile` to [iTOL](https://itol.embl.de/upload.cgi)
-  or open it in [FigTree](https://github.com/rambaut/figtree/releases); turn on
-  node labels to see bootstrap support.
+- **Viewing:** [`viz/app.R`](viz/app.R) draws the tree in the browser.
+  Build the image once, then run it from the project root:
+
+  ```bash
+  docker build -t fungiflow-viz viz
+  docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -p 3838:3838 \
+      -v "$PWD":/data fungiflow-viz
+  ```
+
+  Open http://127.0.0.1:3838. The page has four pictures: the tree,
+  a heatmap of the top organisms by barcode, organisms per barcode, and
+  the share of top-10 reads that match one ITS. Download PDF writes the
+  current view. `Rscript viz/tree.R` and `Rscript viz/plots.R` (after
+  `Rscript viz/install.R`) write the same pictures under `results/viz/`
+  with no page.
+  The same Newick file can also go to [iTOL](https://itol.embl.de/upload.cgi)
+  or [FigTree](https://github.com/rambaut/figtree/releases).
 - **Current results:** model TIM2+F+I+G4; Ascomycota 100% bootstrap. Deep
   nodes inside Basidiomycota are weakly supported (48–77%), which is expected
   for ITS across classes — read the tree at the genus/family level. The warning
