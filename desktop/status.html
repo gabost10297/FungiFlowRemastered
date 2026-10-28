@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>FungiFlow</title>
+  <style>
+    body { font-family: system-ui, sans-serif; color: #222; margin: 0;
+           display: flex; align-items: center; justify-content: center; height: 100vh; }
+    main { max-width: 560px; padding: 2em; }
+    h1 { font-weight: 500; margin: 0 0 0.8em; }
+    #message { font-size: 1.1em; line-height: 1.5; }
+    #detail { color: #777; font-family: monospace; font-size: 0.85em; margin-top: 0.8em;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .error #message { color: #b00020; }
+    #buttons { margin-top: 1.5em; display: none; gap: 0.6em; }
+    .error #buttons, .docker #buttons { display: flex; }
+    #download { display: none; }
+    .docker #download { display: inline-block; }
+    button { font-size: 1em; padding: 0.5em 1em; border: 1px solid #bbb; border-radius: 4px;
+             background: #f5f5f5; cursor: pointer; }
+    button.main { background: #0072B2; border-color: #0072B2; color: white; }
+  </style>
+</head>
+<body>
+  <main id="page">
+    <h1>FungiFlow</h1>
+    <div id="message">Starting...</div>
+    <div id="detail"></div>
+    <div id="buttons">
+      <button id="download" class="main">Download Docker Desktop</button>
+      <button id="retry">Try again</button>
+      <button id="folder">Open FungiFlow folder</button>
+    </div>
+  </main>
+  <script>
+    const page = document.getElementById('page');
+    window.fungiflow.onStatus(({ text, kind }) => {
+      if (kind === 'detail') {
+        document.getElementById('detail').textContent = text;
+        return;
+      }
+      page.className = kind;
+      document.getElementById('message').textContent = text;
+      document.getElementById('detail').textContent = '';
+    });
+    document.getElementById('retry').onclick = () => window.fungiflow.retry();
+    document.getElementById('download').onclick = () => window.fungiflow.downloadDocker();
+    document.getElementById('folder').onclick = () => window.fungiflow.openFolder();
+  </script>
+</body>
+</html>

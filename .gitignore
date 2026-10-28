@@ -9,6 +9,9 @@ database/unite/*_dev.fasta
 # Generated files
 results/*
 !results/.gitkeep
+runs/
+desktop/node_modules/
+desktop/dist/
 logs/*
 !logs/.gitkeep
 database/blast/

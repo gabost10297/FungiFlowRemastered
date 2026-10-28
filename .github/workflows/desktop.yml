@@ -1,0 +1,60 @@
+# Builds the desktop app for Windows, macOS and Linux and attaches the installers
+# to the GitHub release of the pushed tag (for example v1.0.0). The tag must
+# match "version" in desktop/package.json.
+name: Desktop app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches the app version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [[ "v$version" == "$GITHUB_REF_NAME" ]] || { echo "Tag $GITHUB_REF_NAME, package.json $version" >&2; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Build and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          publish=never
+          [[ "$GITHUB_REF_TYPE" == tag ]] && publish=always
+          case "${{ matrix.os }}" in
+            windows-*) npx electron-builder --win --x64 --publish "$publish" ;;
+            macos-*)   npx electron-builder --mac --x64 --arm64 --publish "$publish" ;;
+            *)         npx electron-builder --linux --x64 --publish "$publish" ;;
+          esac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fungiflow-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.AppImage
+          if-no-files-found: ignore

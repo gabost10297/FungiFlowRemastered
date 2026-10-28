@@ -1,0 +1,45 @@
+{
+  "name": "fungiflow",
+  "productName": "FungiFlow",
+  "version": "1.0.0",
+  "description": "Identify fungi in Oxford Nanopore ITS reads: upload barcodes, run the pipeline, view the results.",
+  "author": "gabost10297",
+  "license": "MIT",
+  "repository": "github:gabost10297/FungiFlowRemastered",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "fungiflow": {
+    "registry": "ghcr.io/gabost10297",
+    "port": 38380
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.gabost10297.fungiflow",
+    "productName": "FungiFlow",
+    "files": ["main.js", "docker.js", "preload.js", "status.html", "package.json"],
+    "extraResources": [
+      { "from": "../scripts", "to": "project/scripts" },
+      { "from": "../viz", "to": "project/viz", "filter": ["*.R"] },
+      { "from": "../config.sh", "to": "project/config.sh" },
+      { "from": "../run_pipeline.sh", "to": "project/run_pipeline.sh" },
+      { "from": "../README.md", "to": "project/README.md" },
+      { "from": "../database/unite", "to": "project/database/unite", "filter": ["*.tgz"] }
+    ],
+    "win": { "target": "nsis" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
+    "mac": { "target": "dmg", "category": "public.app-category.education", "identity": null },
+    "linux": { "target": "AppImage", "category": "Science" },
+    "publish": {
+      "provider": "github",
+      "owner": "gabost10297",
+      "repo": "FungiFlowRemastered",
+      "releaseType": "release"
+    }
+  }
+}

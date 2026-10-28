@@ -1,0 +1,20 @@
+# Started by start.sh, which sets HOST_PROJECT, RUN_AS and DOCKER_GID.
+name: fungiflow
+services:
+  app:
+    image: fungiflow-viz
+    container_name: fungiflow-app
+    user: "${RUN_AS:-}"
+    group_add:
+      - "${DOCKER_GID:-0}"
+    environment:
+      HOME: /tmp
+      HOST_PROJECT: "${HOST_PROJECT:-}"
+      RUN_AS: "${RUN_AS:-}"
+      DOCKER_GID: "${DOCKER_GID:-}"
+    ports:
+      - "127.0.0.1:3838:3838"
+    volumes:
+      - "${HOST_PROJECT:-..}:/data"
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped

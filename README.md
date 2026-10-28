@@ -17,6 +17,8 @@ to `logs/NN_<step>.log`.
 - [Project layout](#project-layout)
 - [Setup](#setup)
 - [Running the pipeline](#running-the-pipeline)
+- [The app (upload, run, view)](#the-app-upload-run-view)
+- [Desktop app](#desktop-app)
 - [Settings](#settings)
 - [Steps](#steps): [01](#01-blast-database) · [02](#02-kraken2-database) ·
   [03](#03-read-quality) · [04](#04-filter-and-orient-reads) ·
@@ -68,12 +70,10 @@ In words:
 
 ```
 FungiFlowRemastered/
+├── README.md
 ├── config.sh                    all settings, read by every script
-├── Dockerfile                   main image: fungiflow-remastered
-├── environment.yml              tools in the main image
-├── docker/ngspeciesid/          second image for step 06 only
-│   ├── Dockerfile
-│   └── environment.yml
+├── run_pipeline.sh              steps 03-12 for one run folder
+├── start.sh                     starts the browser app (builds missing images)
 ├── scripts/
 │   ├── 01_build_blast_db.sh … 12_tree.sh   one script per step
 │   └── py/                      Python helpers called by the scripts
@@ -82,11 +82,24 @@ FungiFlowRemastered/
 │       ├── assign_taxonomy.py   (step 09)
 │       ├── organisms.py         (step 10)
 │       └── compare_alignment.py (step 11)
+├── viz/                         the app page and the R pictures (run in image fungiflow-viz)
+│   ├── app.R, runs.R            the page; run folders, start/stop, status
+│   ├── tree.R, plots.R          one function per picture
+│   └── install.R                R packages, for running the pictures without Docker
+├── desktop/                     Electron desktop app (main.js, package.json)
+├── docker/                      every image, one folder each
+│   ├── pipeline/                fungiflow-remastered: Dockerfile, environment.yml (all steps except 06)
+│   ├── ngspeciesid/             fungiflow-ngspeciesid: Dockerfile, environment.yml (step 06)
+│   ├── viz/                     fungiflow-viz: Dockerfile (R, Shiny, ggtree)
+│   └── compose.yml              the browser app container, used by start.sh
+├── .github/workflows/           images.yml (Docker images), desktop.yml (installers)
+├── docs/                        kroki_08_09_10.md, steps 08-10 explained in Polish
 ├── explore/                     one-off tests used to choose settings (not part of the pipeline)
 ├── database/
 │   ├── unite/                   UNITE download (.tgz in git, extracted .fasta not)
 │   ├── blast/                   built by step 01 (not in git)
 │   └── kraken2/                 built by step 02 (not in git)
+├── runs/<name>/                 one folder per run started from the app (not in git)
 ├── raw_data/                    <sample>.fastq.gz, one file per barcode (private, never in git)
 ├── results/                     everything the steps produce (not in git)
 └── logs/                        one log per step (not in git)
@@ -110,19 +123,21 @@ keep the empty folders in the repository.
 
 ### 2. Docker images
 
-Two images, because NGSpeciesID and medaka need versions of Python packages
-that clash with the other tools.
+Two images for the pipeline, because NGSpeciesID and medaka need versions of
+Python packages that clash with the other tools, and one for the app.
 
 | image | built from | tools | used by |
 |---|---|---|---|
-| `fungiflow-remastered` | [`Dockerfile`](Dockerfile), [`environment.yml`](environment.yml) | Python 3.12, BLAST, Kraken2, seqkit, chopper, vsearch, ITSx, MAFFT, IQ-TREE | every step except 06 |
+| `fungiflow-remastered` | [`docker/pipeline/Dockerfile`](docker/pipeline/Dockerfile), [`docker/pipeline/environment.yml`](docker/pipeline/environment.yml) | Python 3.12, BLAST, Kraken2, seqkit, chopper, vsearch, ITSx, MAFFT, IQ-TREE | every step except 06 |
 | `fungiflow-ngspeciesid` | [`docker/ngspeciesid/Dockerfile`](docker/ngspeciesid/Dockerfile), [`docker/ngspeciesid/environment.yml`](docker/ngspeciesid/environment.yml) | NGSpeciesID, medaka (+ the medaka model, downloaded at build), seqkit | step 06 |
+| `fungiflow-viz` | [`docker/viz/Dockerfile`](docker/viz/Dockerfile) | R 4.4, Shiny, ggplot2, ape, ggtree, docker command line | the app and the pictures |
 
-Build them from the project root:
+Build them from the project root (`start.sh` does this for you):
 
 ```bash
-docker build -t fungiflow-remastered .
+docker build -t fungiflow-remastered docker/pipeline
 docker build -t fungiflow-ngspeciesid docker/ngspeciesid
+docker build -t fungiflow-viz docker/viz
 ```
 
 ## Running the pipeline
@@ -177,6 +192,142 @@ Notes:
   reports syntax errors only.
 - **Fewer threads:** every script uses all cores by default; prefix with
   `-e THREADS=4` in `docker run` to limit it.
+
+## The app (upload, run, view)
+
+A browser page for people who do not want the command line. It runs on your
+own computer with Docker. Start it from the project root:
+
+```bash
+bash start.sh               # builds the missing images, then starts the app
+bash start.sh --rebuild     # after changing a Dockerfile or environment.yml
+docker compose -f docker/compose.yml down   # stop the app
+```
+
+Open http://127.0.0.1:3838.
+
+- **Run tab:** create a run (a name such as `air_2025`), add the barcode
+  files (`.fastq.gz`, the file name becomes the sample name), press **Start
+  pipeline**. The table shows each step as running, done, failed, stopped or
+  interrupted; below it is the end of the log, refreshed every 3 seconds.
+  Step 06 takes hours. Closing the browser does not stop the run. **Start**
+  again after a stop continues, because steps 04–07 skip finished samples.
+- **Pictures tab:** pick a run (or `(main project)`, the results in the
+  project root) and a picture. Download PDF saves the current view.
+
+| picture | made from | function |
+|---|---|---|
+| Tree | `results/12_tree/tree.treefile` | `draw_tree` in [`viz/tree.R`](viz/tree.R) |
+| Circular tree with reads | the tree + barcode columns of `organisms.tsv`, one ring per barcode | `draw_circular` in [`viz/plots.R`](viz/plots.R) |
+| Organism heatmap | `results/10_organisms/organisms.tsv` | `draw_heatmap` |
+| PCA of barcodes | `organisms.tsv`, all organisms, Hellinger transform (square root of each organism's share of the barcode), then `prcomp` | `draw_pca` |
+| Organisms per barcode | `results/10_organisms/per_sample.tsv` | `draw_per_sample` |
+| Same ITS in the top 10 | `results/11_alignments/summary.tsv` | `draw_same_its` |
+
+In the PCA, barcodes that lie close together have similar organism shares.
+The arrows are the organisms that pull barcodes apart the most. Hellinger is
+used because read depth differs between barcodes, and raw counts would mostly
+show depth.
+
+How it is put together:
+
+- Each run is a folder `runs/<name>/` that works like a small copy of the
+  project: its own `raw_data/`, `results/`, `logs/`, `config.sh` (copied at
+  the first start, so you can edit settings for that run) and `status.tsv`.
+  `scripts/` and `database/` are links to the shared ones. `runs/` is in
+  `.gitignore`, because it holds the reads.
+- [`run_pipeline.sh`](run_pipeline.sh) runs steps 03–12 for one run, each step
+  in its own container (`fungiflow_<run>_<step>`). It builds the
+  databases (01–02) first if they are missing, and unpacks UNITE if needed.
+  It also works from a terminal: `bash run_pipeline.sh <run name>`.
+- The app ([`viz/app.R`](viz/app.R), run helpers in [`viz/runs.R`](viz/runs.R))
+  is the `fungiflow-viz` image started by
+  [`docker/compose.yml`](docker/compose.yml). It talks to Docker through
+  `/var/run/docker.sock`. **Start** launches `run_pipeline.sh` in a separate
+  container (`fungiflow_runner_<run>`), so the run keeps going when the app
+  restarts. `start.sh` passes your user id (`RUN_AS`), so the new files are
+  yours. It also passes the project's host path (`HOST_PROJECT`) and the
+  socket's group (`DOCKER_GID`).
+- Without the app: `Rscript viz/tree.R` and `Rscript viz/plots.R` (after
+  `Rscript viz/install.R`, or inside `fungiflow-viz`) write all pictures to
+  `results/viz/`.
+
+## Desktop app
+
+The same page in its own window, installed from GitHub Releases. Nothing
+needs to be built or cloned.
+
+**For users**
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+   (on Linux: Docker Engine) and start it once. The pipeline tools only run in
+   Linux containers, so FungiFlow cannot work without it.
+2. Download the installer for your system from the
+   [Releases page](https://github.com/gabost10297/FungiFlowRemastered/releases):
+   `FungiFlow Setup <version>.exe` (Windows), `FungiFlow-<version>.dmg` or
+   `FungiFlow-<version>-arm64.dmg` (Intel or Apple Silicon Mac),
+   `FungiFlow-<version>.AppImage` (Linux).
+3. Open FungiFlow. At the first start it:
+   - starts Docker Desktop if it is not running;
+   - downloads the three images (about 9 GB, once per version);
+   - creates the FungiFlow folder.
+
+   The first run then unpacks UNITE and builds the BLAST and Kraken2 databases
+   (a few minutes).
+
+The installers are not signed. Windows shows "Windows protected your PC":
+choose More info, then Run anyway. On macOS, right-click the app, choose Open,
+then Open.
+
+Everything is kept in one folder:
+
+| system | folder |
+|---|---|
+| Windows | `Documents\FungiFlow`, or `C:\Users\<name>\FungiFlow` when OneDrive syncs Documents |
+| macOS, Linux | `~/Documents/FungiFlow` |
+
+It has the same layout as this repository: `runs/<name>/` with the reads and
+results, `database/`, `scripts/`, and `config.sh`, which you can edit. **File →
+Open FungiFlow folder** opens it. A new app version replaces `scripts/` and
+`viz/`, but keeps `config.sh`, `database/` and `runs/`.
+
+Closing the window stops the page. A running pipeline keeps going as long as
+Docker runs; open FungiFlow again to follow it. On an Apple Silicon Mac the
+images run through emulation, so step 06 is slower.
+
+**How it works** ([`desktop/`](desktop/), Electron)
+
+- [`desktop/main.js`](desktop/main.js) checks Docker, copies the bundled
+  scripts into the folder, and pulls `ghcr.io/gabost10297/<image>:<version>`.
+  It retags each image with its short name (`fungiflow-remastered` and so on),
+  then starts `fungiflow-app` on `127.0.0.1:38380` and shows it in the window.
+- Folder paths differ between systems (Docker cannot read a `C:\...` path
+  given from inside a container). So the folder is mounted once, into a
+  container that is created but never started: `fungiflow-data`. The page,
+  the runner and every step take it with `--volumes-from fungiflow-data`
+  (`DATA_CONTAINER` in [`run_pipeline.sh`](run_pipeline.sh) and
+  [`viz/runs.R`](viz/runs.R)).
+- On Windows and macOS the containers run as root, because Docker Desktop
+  writes files as the logged-in user anyway. On Linux they run as the user.
+- Development: `cd desktop && npm install && npm start`. Set
+  `FUNGIFLOW_LOCAL_IMAGES=1` to use images built with `docker build` instead
+  of downloading them.
+
+**Publishing a new version**
+
+1. Set the same version in [`desktop/package.json`](desktop/package.json),
+   for example `1.0.1`, and commit.
+2. `git tag v1.0.1 && git push origin v1.0.1`.
+3. Two GitHub Actions workflows start:
+   - [`images.yml`](.github/workflows/images.yml) builds the three images and
+     pushes them to GitHub Container Registry as `:1.0.1` and `:latest`;
+   - [`desktop.yml`](.github/workflows/desktop.yml) builds the Windows, macOS
+     and Linux installers and attaches them to the release `v1.0.1`.
+4. First release only: on GitHub, open your profile → Packages, then for each
+   of the three images choose Package settings → Change visibility → Public.
+   Otherwise the app cannot download them.
+
+The images contain only the tools: no reads, no UNITE, no results.
 
 ## Settings
 
@@ -555,21 +706,8 @@ the same ITS sequence in different samples.
   - `tree.iqtree` — report: chosen model, likelihood, a text drawing of the tree
   - `tree.log` — full IQ-TREE log; `tree.mldist`, `tree.bionj`, `tree.splits.nex`,
     `tree.model.gz`, `tree.ckp.gz` — IQ-TREE intermediates
-- **Viewing:** [`viz/app.R`](viz/app.R) draws the tree in the browser.
-  Build the image once, then run it from the project root:
-
-  ```bash
-  docker build -t fungiflow-viz viz
-  docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -p 3838:3838 \
-      -v "$PWD":/data fungiflow-viz
-  ```
-
-  Open http://127.0.0.1:3838. The page has four pictures: the tree,
-  a heatmap of the top organisms by barcode, organisms per barcode, and
-  the share of top-10 reads that match one ITS. Download PDF writes the
-  current view. `Rscript viz/tree.R` and `Rscript viz/plots.R` (after
-  `Rscript viz/install.R`) write the same pictures under `results/viz/`
-  with no page.
+- **Viewing:** the Pictures tab of [the app](#the-app-upload-run-view) draws
+  the tree, also as a circle with a reads-per-barcode ring.
   The same Newick file can also go to [iTOL](https://itol.embl.de/upload.cgi)
   or [FigTree](https://github.com/rambaut/figtree/releases).
 - **Current results:** model TIM2+F+I+G4; Ascomycota 100% bootstrap. Deep
